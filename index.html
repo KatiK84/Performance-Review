@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Performance Review</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>Performance Review</h1>
+      <p>Локальная система оценки сотрудников и квартального бонуса</p>
+    </div>
+    <button id="backupBtn" class="secondary">Сделать backup БД</button>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button data-tab="departments" class="active">Отделы</button>
+    <button data-tab="employees">Сотрудники</button>
+    <button data-tab="criteria">Критерии</button>
+    <button data-tab="monthly">Месячная оценка</button>
+    <button data-tab="quarter">Квартальный обзор</button>
+    <button data-tab="bonus">Премия</button>
+    <button data-tab="reports">Отчеты</button>
+  </nav>
+
+  <main>
+    <section id="tab-departments" class="tab active">
+      <div class="card">
+        <h2>Создать / изменить отдел</h2>
+        <form id="departmentForm" class="grid-form">
+          <input type="hidden" name="id" />
+          <label>Название
+            <input name="name" required />
+          </label>
+          <label>Активен
+            <input name="is_active" type="checkbox" checked />
+          </label>
+          <button type="submit">Сохранить</button>
+          <button type="button" id="departmentReset" class="secondary">Очистить</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Список отделов</h2>
+        <table id="departmentsTable">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Название</th>
+              <th>Активен</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="tab-employees" class="tab">
+      <div class="card">
+        <h2>Создать / изменить сотрудника</h2>
+        <form id="employeeForm" class="grid-form">
+          <input type="hidden" name="id" />
+          <label>ФИО
+            <input name="full_name" required />
+          </label>
+          <label>Отдел
+            <select name="department_id" id="employeeDepartmentSelect" required></select>
+          </label>
+          <label>Должность
+            <input name="position" />
+          </label>
+          <label>Дата приема
+            <input type="date" name="hire_date" required />
+          </label>
+          <label>Дата увольнения
+            <input type="date" name="dismissal_date" />
+          </label>
+          <label>Примечание
+            <input name="notes" />
+          </label>
+          <label>Активен
+            <input name="is_active" type="checkbox" checked />
+          </label>
+          <button type="submit">Сохранить</button>
+          <button type="button" id="employeeReset" class="secondary">Очистить</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Список сотрудников</h2>
+        <div class="inline-controls">
+          <label>Фильтр по отделу
+            <select id="employeeFilterDepartment"></select>
+          </label>
+          <label>
+            <input id="employeeFilterActive" type="checkbox" /> Только активные
+          </label>
+          <button id="employeeReload" class="secondary">Обновить</button>
+        </div>
+        <table id="employeesTable">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>ФИО</th>
+              <th>Отдел</th>
+              <th>Должность</th>
+              <th>Активен</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="tab-criteria" class="tab">
+      <div class="card">
+        <h2>Создать / изменить критерий</h2>
+        <form id="criterionForm" class="grid-form">
+          <input type="hidden" name="id" />
+          <label>Название
+            <input name="name" required />
+          </label>
+          <label>Описание
+            <input name="description" />
+          </label>
+          <label>Вес
+            <input name="weight" type="number" step="0.01" min="0.01" required />
+          </label>
+          <label>Порядок
+            <input name="sort_order" type="number" step="1" min="0" value="0" required />
+          </label>
+          <label>Активен
+            <input name="is_active" type="checkbox" checked />
+          </label>
+          <button type="submit">Сохранить</button>
+          <button type="button" id="criterionReset" class="secondary">Очистить</button>
+        </form>
+        <p id="weightStatus" class="note"></p>
+      </div>
+
+      <div class="card">
+        <h2>Список критериев</h2>
+        <table id="criteriaTable">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Название</th>
+              <th>Вес</th>
+              <th>Активен</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="tab-monthly" class="tab">
+      <div class="card">
+        <h2>Месячная оценка</h2>
+        <div class="inline-controls">
+          <label>Год
+            <input id="monthlyYear" type="number" min="2020" max="2100" />
+          </label>
+          <label>Месяц
+            <input id="monthlyMonth" type="number" min="1" max="12" />
+          </label>
+          <label>Отдел
+            <select id="monthlyDepartment"></select>
+          </label>
+          <button id="monthlyLoad">Загрузить</button>
+          <button id="monthlySave" class="secondary">Сохранить оценки</button>
+          <button id="monthlyComplete" class="secondary">Завершить месяц</button>
+          <button id="monthlyLock" class="secondary">Залочить месяц</button>
+        </div>
+        <p id="monthlyMeta" class="note"></p>
+        <div class="table-wrap">
+          <table id="monthlyTable">
+            <thead></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-quarter" class="tab">
+      <div class="card">
+        <h2>Квартальный обзор</h2>
+        <div class="inline-controls">
+          <label>Год
+            <input id="quarterYear" type="number" min="2020" max="2100" />
+          </label>
+          <label>Квартал
+            <select id="quarterNumber">
+              <option value="1">Q1</option>
+              <option value="2">Q2</option>
+              <option value="3">Q3</option>
+              <option value="4">Q4</option>
+            </select>
+          </label>
+          <label>Отдел
+            <select id="quarterDepartment"></select>
+          </label>
+          <button id="quarterLoad">Загрузить</button>
+        </div>
+        <p id="quarterMeta" class="note"></p>
+        <table id="quarterTable">
+          <thead></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="tab-bonus" class="tab">
+      <div class="card">
+        <h2>Расчет премии</h2>
+        <form id="bonusForm" class="grid-form">
+          <label>Год
+            <input name="year" id="bonusYear" type="number" min="2020" max="2100" />
+          </label>
+          <label>Квартал
+            <select name="quarter" id="bonusQuarter">
+              <option value="1">Q1</option>
+              <option value="2">Q2</option>
+              <option value="3">Q3</option>
+              <option value="4">Q4</option>
+            </select>
+          </label>
+          <label>Отдел
+            <select name="department_id" id="bonusDepartment"></select>
+          </label>
+          <label>Бонусный фонд
+            <input name="bonus_pool_amount" type="number" min="0" step="0.01" required />
+          </label>
+          <label>Тип порога
+            <select name="minimum_threshold_type">
+              <option value="avg_score">Средний квартальный балл</option>
+              <option value="points">Квартальные пункты</option>
+            </select>
+          </label>
+          <label>Значение порога
+            <input name="minimum_threshold_value" type="number" min="0" step="0.01" value="7" required />
+          </label>
+          <label>Режим распределения
+            <select name="distribution_mode">
+              <option value="eligible_full_points">eligible_full_points</option>
+              <option value="above_threshold_only">above_threshold_only</option>
+            </select>
+          </label>
+          <button type="submit">Рассчитать</button>
+          <button type="button" id="bonusLoadSaved" class="secondary">Показать сохраненный расчет</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Результаты премии</h2>
+        <table id="bonusTable">
+          <thead>
+            <tr>
+              <th>Сотрудник</th>
+              <th>Квартальные пункты</th>
+              <th>Средний балл</th>
+              <th>Прошел порог</th>
+              <th>Сумма премии</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="tab-reports" class="tab">
+      <div class="card">
+        <h2>Отчеты и экспорт</h2>
+        <div class="inline-controls">
+          <label>Год
+            <input id="reportsYear" type="number" min="2020" max="2100" />
+          </label>
+          <label>Квартал
+            <select id="reportsQuarter">
+              <option value="1">Q1</option>
+              <option value="2">Q2</option>
+              <option value="3">Q3</option>
+              <option value="4">Q4</option>
+            </select>
+          </label>
+          <label>Отдел
+            <select id="reportsDepartment"></select>
+          </label>
+          <label>Сотрудник
+            <select id="reportsEmployee"></select>
+          </label>
+          <button id="reportEmployeeBtn">Отчет сотрудника</button>
+          <button id="reportDepartmentBtn" class="secondary">Отчет отдела</button>
+          <button id="exportCsvBtn" class="secondary">Экспорт CSV</button>
+          <button id="exportXlsxBtn" class="secondary">Экспорт XLSX</button>
+        </div>
+        <pre id="reportOutput"></pre>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
